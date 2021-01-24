@@ -2,6 +2,7 @@ package transaction_test
 
 import (
 	"github.com/artrey/go-bank-service/pkg/transaction"
+	"reflect"
 	"testing"
 )
 
@@ -41,6 +42,62 @@ func TestService_Add(t *testing.T) {
 		gotTransactions := tt.service.Count()
 		if gotTransactions != tt.wantTransactions {
 			t.Errorf("%v: got = %v, want %v", tt.name, gotTransactions, tt.wantTransactions)
+		}
+	}
+}
+
+func TestService_Sort(t *testing.T) {
+	transactions := []*transaction.Transaction{
+		&transaction.Transaction{
+			Amount: 100_00,
+			Total:  100_00,
+		},
+		&transaction.Transaction{
+			Amount: 200_00,
+			Total:  200_00,
+		},
+		&transaction.Transaction{
+			Amount: 300_00,
+			Total:  300_00,
+		},
+	}
+
+	tests := []struct {
+		name         string
+		transactions []*transaction.Transaction
+		wantOrder    []*transaction.Transaction
+	}{
+		{
+			name: "ordered",
+			transactions: []*transaction.Transaction{
+				transactions[2],
+				transactions[1],
+				transactions[0],
+			},
+			wantOrder: []*transaction.Transaction{
+				transactions[2],
+				transactions[1],
+				transactions[0],
+			},
+		},
+		{
+			name: "unordered",
+			transactions: []*transaction.Transaction{
+				transactions[1],
+				transactions[2],
+				transactions[0],
+			},
+			wantOrder: []*transaction.Transaction{
+				transactions[2],
+				transactions[1],
+				transactions[0],
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		if got := transaction.Sort(tt.transactions); !reflect.DeepEqual(got, tt.wantOrder) {
+			t.Errorf("%v: got = %v, want %v", tt.name, got, tt.wantOrder)
 		}
 	}
 }

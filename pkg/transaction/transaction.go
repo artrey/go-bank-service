@@ -1,5 +1,7 @@
 package transaction
 
+import "sort"
+
 type Transaction struct {
 	Id     int64
 	From   string
@@ -32,4 +34,11 @@ func (s *Service) Add(from, to string, amount, total int64) *Transaction {
 	}
 	*s = append(*s, transaction)
 	return transaction
+}
+
+func Sort(transactions []*Transaction) []*Transaction {
+	sort.SliceStable(transactions, func(i, j int) bool {
+		return transactions[i].Total > transactions[j].Total
+	})
+	return transactions
 }
