@@ -71,6 +71,21 @@ func IsValidCardNumber(number string) bool {
 	return result % 10 == 0
 }
 
+func (s *Service) CalcCommission(from, to *card.Card, amount int64) int64 {
+	var commission int64 = 0
+	if from == nil && to == nil {
+		commission += s.commissions.FromOuterToOuter(amount)
+	} else {
+		if to != nil {
+			commission += s.commissions.ToInner(amount)
+		}
+		if from != nil {
+			commission += s.commissions.FromInner(amount)
+		}
+	}
+	return commission
+}
+
 func (s *Service) Card2Card(from, to string, amount int64) (int64, error) {
 	if amount <= 0 {
 		return 0, NonPositiveAmount
@@ -90,17 +105,7 @@ func (s *Service) Card2Card(from, to string, amount int64) (int64, error) {
 		return 0, CardNotFound
 	}
 
-	var commission int64 = 0
-	if fromCard == nil && toCard == nil {
-		commission += s.commissions.FromOuterToOuter(amount)
-	} else {
-		if toCard != nil {
-			commission += s.commissions.ToInner(amount)
-		}
-		if fromCard != nil {
-			commission += s.commissions.FromInner(amount)
-		}
-	}
+	commission := s.CalcCommission(fromCard, toCard, amount)
 	total := amount + commission
 
 	if fromCard != nil && !fromCard.Withdraw(total) {
