@@ -101,3 +101,196 @@ func TestSort(t *testing.T) {
 		}
 	}
 }
+
+func makeTransactions() []*transaction.Transaction {
+	const users = 1_000
+	const transactionsPerUser = 1_000
+	const transactionTotal = 1_00
+	transactions := make([]*transaction.Transaction, users*transactionsPerUser)
+	for index := range transactions {
+		switch index % 100 {
+		case 0:
+			transactions[index] = &transaction.Transaction{
+				From:  "4561 2612 1234 5467",
+				Total: transactionTotal,
+				MCC:   "5411",
+			}
+		case 10:
+			transactions[index] = &transaction.Transaction{
+				From:  "4561 2612 1234 5467",
+				Total: transactionTotal,
+				MCC:   "5812",
+			}
+		case 20:
+			transactions[index] = &transaction.Transaction{
+				From:  "4561 2612 1234 5467",
+				Total: transactionTotal,
+				MCC:   "5912",
+			}
+		case 30, 31:
+			transactions[index] = &transaction.Transaction{
+				From:  "4561 2612 1234 5467",
+				Total: transactionTotal,
+				MCC:   "5533",
+			}
+		case 40:
+			transactions[index] = &transaction.Transaction{
+				From:  "4561 2612 1234 5467",
+				Total: transactionTotal,
+				MCC:   "2222",
+			}
+		default:
+			transactions[index] = &transaction.Transaction{
+				From:  "1234 4561 2612 5467",
+				Total: transactionTotal,
+				MCC:   "5533",
+			}
+		}
+	}
+	return transactions
+}
+
+func TestCategorize(t *testing.T) {
+	type args struct {
+		transactions   []*transaction.Transaction
+		fromCardNumber string
+	}
+	tests := []struct {
+		name     string
+		args     args
+		expected map[string]int64
+	}{
+		{
+			name: "Positive categorizing",
+			args: args{
+				transactions:   makeTransactions(),
+				fromCardNumber: "4561 2612 1234 5467",
+			},
+			expected: map[string]int64{
+				"Супермаркеты":         10_000_00,
+				"Автоуслуги":           20_000_00,
+				"Рестораны":            10_000_00,
+				"Аптеки":               10_000_00,
+				"Категория не указана": 10_000_00,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		got := transaction.Categorize(tt.args.transactions, tt.args.fromCardNumber)
+		if !reflect.DeepEqual(got, tt.expected) {
+			t.Errorf("%v: got = %v, want %v", tt.name, got, tt.expected)
+		}
+	}
+}
+
+func TestCategorizeConcurrentWithMutex(t *testing.T) {
+	type args struct {
+		transactions   []*transaction.Transaction
+		fromCardNumber string
+		goroutines     int
+	}
+	tests := []struct {
+		name     string
+		args     args
+		expected map[string]int64
+	}{
+		{
+			name: "Positive categorizing",
+			args: args{
+				transactions:   makeTransactions(),
+				fromCardNumber: "4561 2612 1234 5467",
+				goroutines:     100,
+			},
+			expected: map[string]int64{
+				"Супермаркеты":         10_000_00,
+				"Автоуслуги":           20_000_00,
+				"Рестораны":            10_000_00,
+				"Аптеки":               10_000_00,
+				"Категория не указана": 10_000_00,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		got := transaction.CategorizeConcurrentWithMutex(
+			tt.args.transactions, tt.args.fromCardNumber, tt.args.goroutines)
+		if !reflect.DeepEqual(got, tt.expected) {
+			t.Errorf("%v: got = %v, want %v", tt.name, got, tt.expected)
+		}
+	}
+}
+
+func TestCategorizeConcurrentWithChannels(t *testing.T) {
+	type args struct {
+		transactions   []*transaction.Transaction
+		fromCardNumber string
+		goroutines     int
+	}
+	tests := []struct {
+		name     string
+		args     args
+		expected map[string]int64
+	}{
+		{
+			name: "Positive categorizing",
+			args: args{
+				transactions:   makeTransactions(),
+				fromCardNumber: "4561 2612 1234 5467",
+				goroutines:     10,
+			},
+			expected: map[string]int64{
+				"Супермаркеты":         10_000_00,
+				"Автоуслуги":           20_000_00,
+				"Рестораны":            10_000_00,
+				"Аптеки":               10_000_00,
+				"Категория не указана": 10_000_00,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		got := transaction.CategorizeConcurrentWithChannels(
+			tt.args.transactions, tt.args.fromCardNumber, tt.args.goroutines)
+		if !reflect.DeepEqual(got, tt.expected) {
+			t.Errorf("%v: got = %v, want %v", tt.name, got, tt.expected)
+		}
+	}
+}
+
+func TestCategorizeConcurrentWithMutexManual(t *testing.T) {
+	type args struct {
+		transactions   []*transaction.Transaction
+		fromCardNumber string
+		goroutines     int
+	}
+	tests := []struct {
+		name     string
+		args     args
+		expected map[string]int64
+	}{
+		{
+			name: "Positive categorizing",
+			args: args{
+				transactions:   makeTransactions(),
+				fromCardNumber: "4561 2612 1234 5467",
+				goroutines:     100,
+			},
+			expected: map[string]int64{
+				"Супермаркеты":         10_000_00,
+				"Автоуслуги":           20_000_00,
+				"Рестораны":            10_000_00,
+				"Аптеки":               10_000_00,
+				"Категория не указана": 10_000_00,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		got := transaction.CategorizeConcurrentWithMutexManual(
+			tt.args.transactions, tt.args.fromCardNumber, tt.args.goroutines)
+		if !reflect.DeepEqual(got, tt.expected) {
+			t.Errorf("%v: got = %v, want %v", tt.name, got, tt.expected)
+		}
+	}
+}
