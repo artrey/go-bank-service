@@ -46,17 +46,17 @@ func TestService_Add(t *testing.T) {
 	}
 }
 
-func TestService_Sort(t *testing.T) {
+func TestSort(t *testing.T) {
 	transactions := []*transaction.Transaction{
-		&transaction.Transaction{
+		{
 			Amount: 100_00,
 			Total:  100_00,
 		},
-		&transaction.Transaction{
+		{
 			Amount: 200_00,
 			Total:  200_00,
 		},
-		&transaction.Transaction{
+		{
 			Amount: 300_00,
 			Total:  300_00,
 		},
