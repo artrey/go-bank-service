@@ -150,29 +150,35 @@ func makeTransactions() []*transaction.Transaction {
 	return transactions
 }
 
-func TestCategorize(t *testing.T) {
-	type args struct {
-		transactions   []*transaction.Transaction
-		fromCardNumber string
+func makeExpectedResult() map[string]int64 {
+	return map[string]int64{
+		"Супермаркеты":         10_000_00,
+		"Автоуслуги":           20_000_00,
+		"Рестораны":            10_000_00,
+		"Аптеки":               10_000_00,
+		"Категория не указана": 10_000_00,
 	}
+}
+
+type categorizeArgs struct {
+	transactions   []*transaction.Transaction
+	fromCardNumber string
+	goroutines     int
+}
+
+func TestCategorize(t *testing.T) {
 	tests := []struct {
 		name     string
-		args     args
+		args     categorizeArgs
 		expected map[string]int64
 	}{
 		{
 			name: "Positive categorizing",
-			args: args{
+			args: categorizeArgs{
 				transactions:   makeTransactions(),
 				fromCardNumber: "4561 2612 1234 5467",
 			},
-			expected: map[string]int64{
-				"Супермаркеты":         10_000_00,
-				"Автоуслуги":           20_000_00,
-				"Рестораны":            10_000_00,
-				"Аптеки":               10_000_00,
-				"Категория не указана": 10_000_00,
-			},
+			expected: makeExpectedResult(),
 		},
 	}
 
@@ -185,19 +191,14 @@ func TestCategorize(t *testing.T) {
 }
 
 func TestCategorizeConcurrentWithMutex(t *testing.T) {
-	type args struct {
-		transactions   []*transaction.Transaction
-		fromCardNumber string
-		goroutines     int
-	}
 	tests := []struct {
 		name     string
-		args     args
+		args     categorizeArgs
 		expected map[string]int64
 	}{
 		{
 			name: "Positive categorizing",
-			args: args{
+			args: categorizeArgs{
 				transactions:   makeTransactions(),
 				fromCardNumber: "4561 2612 1234 5467",
 				goroutines:     100,
@@ -222,19 +223,14 @@ func TestCategorizeConcurrentWithMutex(t *testing.T) {
 }
 
 func TestCategorizeConcurrentWithChannels(t *testing.T) {
-	type args struct {
-		transactions   []*transaction.Transaction
-		fromCardNumber string
-		goroutines     int
-	}
 	tests := []struct {
 		name     string
-		args     args
+		args     categorizeArgs
 		expected map[string]int64
 	}{
 		{
 			name: "Positive categorizing",
-			args: args{
+			args: categorizeArgs{
 				transactions:   makeTransactions(),
 				fromCardNumber: "4561 2612 1234 5467",
 				goroutines:     10,
@@ -259,19 +255,14 @@ func TestCategorizeConcurrentWithChannels(t *testing.T) {
 }
 
 func TestCategorizeConcurrentWithMutexManual(t *testing.T) {
-	type args struct {
-		transactions   []*transaction.Transaction
-		fromCardNumber string
-		goroutines     int
-	}
 	tests := []struct {
 		name     string
-		args     args
+		args     categorizeArgs
 		expected map[string]int64
 	}{
 		{
 			name: "Positive categorizing",
-			args: args{
+			args: categorizeArgs{
 				transactions:   makeTransactions(),
 				fromCardNumber: "4561 2612 1234 5467",
 				goroutines:     100,
@@ -292,5 +283,194 @@ func TestCategorizeConcurrentWithMutexManual(t *testing.T) {
 		if !reflect.DeepEqual(got, tt.expected) {
 			t.Errorf("%v: got = %v, want %v", tt.name, got, tt.expected)
 		}
+	}
+}
+
+func BenchmarkCategorize(b *testing.B) {
+	args := categorizeArgs{
+		transactions:   makeTransactions(),
+		fromCardNumber: "4561 2612 1234 5467",
+	}
+	expected := makeExpectedResult()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		got := transaction.Categorize(args.transactions, args.fromCardNumber)
+		b.StopTimer()
+		if !reflect.DeepEqual(got, expected) {
+			b.Fatalf("invalid result, got = %v, want %v", got, expected)
+		}
+		b.StartTimer()
+	}
+}
+
+func BenchmarkCategorizeConcurrentWithMutex(b *testing.B) {
+	args := categorizeArgs{
+		transactions:   makeTransactions(),
+		fromCardNumber: "4561 2612 1234 5467",
+		goroutines:     10,
+	}
+	expected := makeExpectedResult()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		got := transaction.CategorizeConcurrentWithMutex(args.transactions, args.fromCardNumber, args.goroutines)
+		b.StopTimer()
+		if !reflect.DeepEqual(got, expected) {
+			b.Fatalf("invalid result, got = %v, want %v", got, expected)
+		}
+		b.StartTimer()
+	}
+}
+
+func BenchmarkCategorizeConcurrentWithMutex100g(b *testing.B) {
+	args := categorizeArgs{
+		transactions:   makeTransactions(),
+		fromCardNumber: "4561 2612 1234 5467",
+		goroutines:     100,
+	}
+	expected := makeExpectedResult()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		got := transaction.CategorizeConcurrentWithMutex(args.transactions, args.fromCardNumber, args.goroutines)
+		b.StopTimer()
+		if !reflect.DeepEqual(got, expected) {
+			b.Fatalf("invalid result, got = %v, want %v", got, expected)
+		}
+		b.StartTimer()
+	}
+}
+
+func BenchmarkCategorizeConcurrentWithMutex1000g(b *testing.B) {
+	args := categorizeArgs{
+		transactions:   makeTransactions(),
+		fromCardNumber: "4561 2612 1234 5467",
+		goroutines:     1000,
+	}
+	expected := makeExpectedResult()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		got := transaction.CategorizeConcurrentWithMutex(args.transactions, args.fromCardNumber, args.goroutines)
+		b.StopTimer()
+		if !reflect.DeepEqual(got, expected) {
+			b.Fatalf("invalid result, got = %v, want %v", got, expected)
+		}
+		b.StartTimer()
+	}
+}
+
+func BenchmarkCategorizeConcurrentWithChannels(b *testing.B) {
+	args := categorizeArgs{
+		transactions:   makeTransactions(),
+		fromCardNumber: "4561 2612 1234 5467",
+		goroutines:     10,
+	}
+	expected := makeExpectedResult()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		got := transaction.CategorizeConcurrentWithChannels(args.transactions, args.fromCardNumber, args.goroutines)
+		b.StopTimer()
+		if !reflect.DeepEqual(got, expected) {
+			b.Fatalf("invalid result, got = %v, want %v", got, expected)
+		}
+		b.StartTimer()
+	}
+}
+
+func BenchmarkCategorizeConcurrentWithChannels100g(b *testing.B) {
+	args := categorizeArgs{
+		transactions:   makeTransactions(),
+		fromCardNumber: "4561 2612 1234 5467",
+		goroutines:     100,
+	}
+	expected := makeExpectedResult()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		got := transaction.CategorizeConcurrentWithChannels(args.transactions, args.fromCardNumber, args.goroutines)
+		b.StopTimer()
+		if !reflect.DeepEqual(got, expected) {
+			b.Fatalf("invalid result, got = %v, want %v", got, expected)
+		}
+		b.StartTimer()
+	}
+}
+
+func BenchmarkCategorizeConcurrentWithChannels1000g(b *testing.B) {
+	args := categorizeArgs{
+		transactions:   makeTransactions(),
+		fromCardNumber: "4561 2612 1234 5467",
+		goroutines:     1000,
+	}
+	expected := makeExpectedResult()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		got := transaction.CategorizeConcurrentWithChannels(args.transactions, args.fromCardNumber, args.goroutines)
+		b.StopTimer()
+		if !reflect.DeepEqual(got, expected) {
+			b.Fatalf("invalid result, got = %v, want %v", got, expected)
+		}
+		b.StartTimer()
+	}
+}
+
+func BenchmarkCategorizeConcurrentWithMutexManual(b *testing.B) {
+	args := categorizeArgs{
+		transactions:   makeTransactions(),
+		fromCardNumber: "4561 2612 1234 5467",
+		goroutines:     10,
+	}
+	expected := makeExpectedResult()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		got := transaction.CategorizeConcurrentWithMutexManual(args.transactions, args.fromCardNumber, args.goroutines)
+		b.StopTimer()
+		if !reflect.DeepEqual(got, expected) {
+			b.Fatalf("invalid result, got = %v, want %v", got, expected)
+		}
+		b.StartTimer()
+	}
+}
+
+func BenchmarkCategorizeConcurrentWithMutexManual100g(b *testing.B) {
+	args := categorizeArgs{
+		transactions:   makeTransactions(),
+		fromCardNumber: "4561 2612 1234 5467",
+		goroutines:     100,
+	}
+	expected := makeExpectedResult()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		got := transaction.CategorizeConcurrentWithMutexManual(args.transactions, args.fromCardNumber, args.goroutines)
+		b.StopTimer()
+		if !reflect.DeepEqual(got, expected) {
+			b.Fatalf("invalid result, got = %v, want %v", got, expected)
+		}
+		b.StartTimer()
+	}
+}
+
+func BenchmarkCategorizeConcurrentWithMutexManual1000g(b *testing.B) {
+	args := categorizeArgs{
+		transactions:   makeTransactions(),
+		fromCardNumber: "4561 2612 1234 5467",
+		goroutines:     1000,
+	}
+	expected := makeExpectedResult()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		got := transaction.CategorizeConcurrentWithMutexManual(args.transactions, args.fromCardNumber, args.goroutines)
+		b.StopTimer()
+		if !reflect.DeepEqual(got, expected) {
+			b.Fatalf("invalid result, got = %v, want %v", got, expected)
+		}
+		b.StartTimer()
 	}
 }
