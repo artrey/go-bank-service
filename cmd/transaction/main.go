@@ -3,29 +3,52 @@ package main
 import (
 	"fmt"
 	"github.com/artrey/go-bank-service/pkg/transaction"
+	"log"
+	"os"
+	"runtime/trace"
 	"sync"
 	"time"
 )
 
 func main() {
+	f, err := os.Create("trace.out")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			log.Print(err)
+		}
+	}()
+	err = trace.Start(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer trace.Stop()
+
 	transactions := []*transaction.Transaction{
-		&transaction.Transaction{
+		{
+			From:      "4561 2612 1234 5467",
 			Timestamp: time.Date(2020, 9, 25, 16, 0, 0, 0, time.Local).UTC().Unix(),
 			Total:     500_00,
 		},
-		&transaction.Transaction{
+		{
+			From:      "4561 2612 1234 5467",
 			Timestamp: time.Date(2020, 9, 26, 12, 0, 0, 0, time.Local).UTC().Unix(),
 			Total:     500_00,
 		},
-		&transaction.Transaction{
+		{
+			From:      "4561 2612 1234 5467",
 			Timestamp: time.Date(2020, 10, 4, 20, 15, 0, 0, time.Local).UTC().Unix(),
 			Total:     1200_00,
 		},
-		&transaction.Transaction{
+		{
+			From:      "4561 2612 1234 5467",
 			Timestamp: time.Date(2021, 1, 22, 20, 15, 0, 0, time.Local).UTC().Unix(),
 			Total:     100_00,
 		},
-		&transaction.Transaction{
+		{
+			From:      "4561 2612 1234 5467",
 			Timestamp: time.Date(2021, 1, 23, 23, 59, 59, 0, time.Local).UTC().Unix(),
 			Total:     15000_00,
 		},
@@ -33,6 +56,9 @@ func main() {
 	from := time.Date(2020, 9, 15, 0, 0, 0, 0, time.Local)
 	to := time.Date(2021, 1, 25, 0, 0, 0, 0, time.Local)
 	SumConcurrently(transactions, from.UTC().Unix(), to.UTC().Unix())
+
+	transaction.CategorizeConcurrentWithMutex(transactions, "4561 2612 1234 5467", 5)
+	transaction.CategorizeConcurrentWithChannels(transactions, "4561 2612 1234 5467", 5)
 }
 
 func SumConcurrently(transactions []*transaction.Transaction, from, to int64) int64 {
