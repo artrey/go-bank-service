@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/xml"
 	"fmt"
 	"github.com/artrey/go-bank-service/pkg/transaction"
 	"log"
@@ -59,6 +60,28 @@ func main() {
 
 	transaction.CategorizeConcurrentWithMutex(transactions, "4561 2612 1234 5467", 5)
 	transaction.CategorizeConcurrentWithChannels(transactions, "4561 2612 1234 5467", 5)
+
+	data := transaction.Transactions{
+		XMLName:      "test",
+		Transactions: transactions,
+	}
+	encoded, err := xml.Marshal(data)
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+	encoded = append([]byte(xml.Header), encoded...)
+	log.Println(string(encoded))
+
+	var decoded transaction.Transactions
+	err = xml.Unmarshal(encoded, &decoded)
+	if err != nil {
+		log.Println(err)
+		os.Exit(2)
+	}
+	for _, t := range decoded.Transactions {
+		log.Printf("%#v", t)
+	}
 }
 
 func SumConcurrently(transactions []*transaction.Transaction, from, to int64) int64 {

@@ -17,13 +17,19 @@ var (
 )
 
 type Transaction struct {
-	Id        int64
-	From      string
-	To        string
-	Timestamp int64
-	Amount    int64
-	Total     int64
-	MCC       mcc.MCC
+	XMLName   string  `xml:"transaction"`
+	Id        int64   `xml:"id"`
+	From      string  `xml:"from"`
+	To        string  `xml:"to"`
+	Timestamp int64   `xml:"timestamp"`
+	Amount    int64   `xml:"amount"`
+	Total     int64   `xml:"total"`
+	MCC       mcc.MCC `xml:"mcc"`
+}
+
+type Transactions struct {
+	XMLName      string         `xml:"transactions"`
+	Transactions []*Transaction `xml:"transaction"`
 }
 
 type Service struct {
