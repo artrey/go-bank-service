@@ -68,7 +68,7 @@ func IsValidCardNumber(number string) bool {
 	for _, val := range numberDigits {
 		result += val
 	}
-	return result % 10 == 0
+	return result%10 == 0
 }
 
 func (s *Service) CalcCommission(from, to *card.Card, amount int64) int64 {
@@ -116,7 +116,7 @@ func (s *Service) Card2Card(from, to string, amount int64) (int64, error) {
 		toCard.AddMoney(amount)
 	}
 
-	s.TransactionSvc.Add(from, to, amount, total)
+	s.TransactionSvc.Add(from, to, amount, total, "0000")
 
 	return total, nil
 }

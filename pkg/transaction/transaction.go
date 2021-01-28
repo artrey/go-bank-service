@@ -17,20 +17,26 @@ type Transaction struct {
 	MCC       mcc.MCC
 }
 
-type Service []*Transaction
+type Service struct {
+	mu           sync.Mutex
+	transactions []*Transaction
+}
 
 func NewService() *Service {
 	return &Service{}
 }
 
 func (s *Service) Count() int {
-	return len(*s)
+	return len(s.transactions)
 }
 
-func (s *Service) Add(from, to string, amount, total int64) *Transaction {
-	var id int64 = 1
-	if len(*s) > 0 {
-		id = (*s)[len(*s)-1].Id + 1
+func (s *Service) Add(from, to string, amount, total int64, MCC mcc.MCC) *Transaction {
+	id := int64(1)
+
+	s.mu.Lock()
+
+	if s.Count() > 0 {
+		id = s.transactions[s.Count()-1].Id + 1
 	}
 	transaction := &Transaction{
 		Id:        id,
@@ -39,8 +45,12 @@ func (s *Service) Add(from, to string, amount, total int64) *Transaction {
 		Timestamp: time.Now().UTC().Unix(),
 		Amount:    amount,
 		Total:     total,
+		MCC:       MCC,
 	}
-	*s = append(*s, transaction)
+	s.transactions = append(s.transactions, transaction)
+
+	s.mu.Unlock()
+
 	return transaction
 }
 
@@ -152,7 +162,7 @@ func CategorizeConcurrentWithChannels(transactions []*Transaction,
 		}
 		part := transactions[fromIndex:toIndex]
 
-		go func(ch chan <- map[string]int64) {
+		go func(ch chan<- map[string]int64) {
 			ch <- Categorize(part, fromCardNumber)
 		}(ch)
 	}

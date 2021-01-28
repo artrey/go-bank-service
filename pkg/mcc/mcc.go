@@ -13,6 +13,7 @@ func (m MCC) compare(other MCC) int {
 
 func (m MCC) ToCategory() string {
 	mcc := map[MCC]string{
+		"0000": "Перевод",
 		"5411": "Супермаркеты",
 		"5533": "Автоуслуги",
 		"5812": "Рестораны",

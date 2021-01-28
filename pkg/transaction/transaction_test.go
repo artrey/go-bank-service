@@ -7,6 +7,10 @@ import (
 )
 
 func TestService_Add(t *testing.T) {
+	preparedService := transaction.NewService()
+	preparedService.Add("4561 2612 1234 5464", "2612 4561 1234 5464",
+		100_00, 100_00, "0000")
+
 	tests := []struct {
 		name             string
 		service          *transaction.Service
@@ -18,16 +22,8 @@ func TestService_Add(t *testing.T) {
 			wantTransactions: 1,
 		},
 		{
-			name: "service with one transaction",
-			service: &transaction.Service{
-				&transaction.Transaction{
-					Id:     1,
-					From:   "4561 2612 1234 5464",
-					To:     "2612 4561 1234 5464",
-					Amount: 100_00,
-					Total:  100_00,
-				},
-			},
+			name:             "service with one transaction",
+			service:          preparedService,
 			wantTransactions: 2,
 		},
 	}
@@ -38,6 +34,7 @@ func TestService_Add(t *testing.T) {
 			"2612 4561 1234 5464",
 			100_00,
 			100_00,
+			"2222",
 		)
 		gotTransactions := tt.service.Count()
 		if gotTransactions != tt.wantTransactions {
@@ -49,16 +46,13 @@ func TestService_Add(t *testing.T) {
 func TestSort(t *testing.T) {
 	transactions := []*transaction.Transaction{
 		{
-			Amount: 100_00,
-			Total:  100_00,
+			Total: 100_00,
 		},
 		{
-			Amount: 200_00,
-			Total:  200_00,
+			Total: 200_00,
 		},
 		{
-			Amount: 300_00,
-			Total:  300_00,
+			Total: 300_00,
 		},
 	}
 
