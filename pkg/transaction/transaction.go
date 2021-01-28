@@ -1,10 +1,19 @@
 package transaction
 
 import (
+	"encoding/csv"
+	"errors"
 	"github.com/artrey/go-bank-service/pkg/mcc"
+	"io"
+	"log"
 	"sort"
+	"strconv"
 	"sync"
 	"time"
+)
+
+var (
+	InvalidSizeCsvSlice = errors.New("size of slice with data")
 )
 
 type Transaction struct {
@@ -52,6 +61,92 @@ func (s *Service) Add(from, to string, amount, total int64, MCC mcc.MCC) *Transa
 	s.mu.Unlock()
 
 	return transaction
+}
+
+func (s *Service) ExportAsCsv(writer io.Writer) error {
+	s.mu.Lock()
+	if s.Count() == 0 {
+		s.mu.Unlock()
+		return nil
+	}
+
+	records := make([][]string, 0, s.Count())
+	for _, t := range s.transactions {
+		record := AsCsvSlice(t)
+		records = append(records, record)
+	}
+	s.mu.Unlock()
+
+	w := csv.NewWriter(writer)
+	return w.WriteAll(records)
+}
+
+func (s *Service) ImportFromCsv(records [][]string) {
+	if len(records) == 0 {
+		return
+	}
+
+	s.mu.Lock()
+	for line, record := range records {
+		t, err := FromCsvSlice(record)
+		if err != nil {
+			log.Printf("line %d | %v", line+1, err)
+			continue
+		}
+		s.transactions = append(s.transactions, t)
+	}
+	s.mu.Unlock()
+}
+
+func AsCsvSlice(t *Transaction) []string {
+	return []string{
+		strconv.FormatInt(t.Id, 10),
+		t.From,
+		t.To,
+		strconv.FormatFloat(float64(t.Amount)/100.0, 'f', 2, 64),
+		strconv.FormatFloat(float64(t.Total)/100.0, 'f', 2, 64),
+		strconv.FormatInt(t.Timestamp, 10),
+		string(t.MCC),
+	}
+}
+
+func FromCsvSlice(data []string) (t *Transaction, err error) {
+	if len(data) != 7 {
+		return nil, InvalidSizeCsvSlice
+	}
+
+	id, err := strconv.ParseInt(data[0], 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	amountFloat, err := strconv.ParseFloat(data[3], 64)
+	if err != nil {
+		return nil, err
+	}
+	amount := int64(amountFloat * 100)
+
+	totalFloat, err := strconv.ParseFloat(data[4], 64)
+	if err != nil {
+		return nil, err
+	}
+	total := int64(totalFloat * 100)
+
+	timestamp, err := strconv.ParseInt(data[5], 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	t = &Transaction{
+		Id:        id,
+		From:      data[1],
+		To:        data[2],
+		Timestamp: timestamp,
+		Amount:    amount,
+		Total:     total,
+		MCC:       mcc.MCC(data[6]),
+	}
+	return t, nil
 }
 
 func Sort(transactions []*Transaction) []*Transaction {

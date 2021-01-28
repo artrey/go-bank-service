@@ -43,6 +43,59 @@ func TestService_Add(t *testing.T) {
 	}
 }
 
+func TestFromCsvSlice(t *testing.T) {
+	tests := []struct {
+		name       string
+		data       []string
+		wantResult *transaction.Transaction
+		wantError  error
+	}{
+		{
+			name: "valid",
+			data: []string{
+				"14",
+				"4561 2612 1234 5467",
+				"5106 2105 0000 0002",
+				"100.00",
+				"130.00",
+				"1611837340",
+				"0000",
+			},
+			wantResult: &transaction.Transaction{
+				Id:        14,
+				From:      "4561 2612 1234 5467",
+				To:        "5106 2105 0000 0002",
+				Timestamp: 1611837340,
+				Amount:    100_00,
+				Total:     130_00,
+				MCC:       "0000",
+			},
+			wantError: nil,
+		},
+		{
+			name: "invalid size of slice",
+			data: []string{
+				"14",
+				"4561 2612 1234 5467",
+				"100.00",
+				"130.00",
+			},
+			wantResult: nil,
+			wantError:  transaction.InvalidSizeCsvSlice,
+		},
+	}
+
+	for _, tt := range tests {
+		gotResult, gotError := transaction.FromCsvSlice(tt.data)
+		if gotError != tt.wantError {
+			t.Errorf("%v (error): got = %v, want %v", tt.name, gotError, tt.wantError)
+		}
+		if !reflect.DeepEqual(gotResult, tt.wantResult) {
+			t.Errorf("%v (result): got = %v, want %v", tt.name, gotResult, tt.wantResult)
+		}
+	}
+}
+
 func TestSort(t *testing.T) {
 	transactions := []*transaction.Transaction{
 		{
