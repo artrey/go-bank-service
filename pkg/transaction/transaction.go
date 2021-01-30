@@ -69,11 +69,18 @@ func (s *Service) Add(from, to string, amount, total int64, MCC mcc.MCC) *Transa
 	return transaction
 }
 
-func (s *Service) ExportAsCsv(writer io.Writer) error {
+func (s *Service) Transactions() []*Transaction {
+	s.mu.Lock()
+	data := s.transactions[:]
+	s.mu.Unlock()
+	return data
+}
+
+func (s *Service) ExportRecords() [][]string {
 	s.mu.Lock()
 	if s.Count() == 0 {
 		s.mu.Unlock()
-		return nil
+		return [][]string{}
 	}
 
 	records := make([][]string, 0, s.Count())
@@ -83,11 +90,19 @@ func (s *Service) ExportAsCsv(writer io.Writer) error {
 	}
 	s.mu.Unlock()
 
+	return records
+}
+
+func (s *Service) ExportAsCsv(writer io.Writer) error {
+	records := s.ExportRecords()
+	if len(records) == 0 {
+		return nil
+	}
 	w := csv.NewWriter(writer)
 	return w.WriteAll(records)
 }
 
-func (s *Service) ImportFromCsv(records [][]string) {
+func (s *Service) ImportRecords(records [][]string) {
 	if len(records) == 0 {
 		return
 	}

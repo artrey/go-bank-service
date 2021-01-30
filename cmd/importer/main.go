@@ -31,6 +31,6 @@ func execute(svc *transaction.Service, filename string) (err error) {
 		return err
 	}
 
-	svc.ImportFromCsv(records)
+	svc.ImportRecords(records)
 	return nil
 }
