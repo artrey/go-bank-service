@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"github.com/artrey/go-bank-service/pkg/transaction"
 	"log"
@@ -62,6 +63,11 @@ func main() {
 	transaction.CategorizeConcurrentWithMutex(transactions, "4561 2612 1234 5467", 5)
 	transaction.CategorizeConcurrentWithChannels(transactions, "4561 2612 1234 5467", 5)
 
+	TestMarshalingJson(transactions)
+	TestMarshalingXml(transactions)
+}
+
+func TestMarshalingJson(transactions []*transaction.Transaction) {
 	encoded, err := json.Marshal(transactions)
 	if err != nil {
 		log.Println(err)
@@ -76,6 +82,29 @@ func main() {
 		os.Exit(2)
 	}
 	for _, t := range decoded {
+		log.Printf("%#v", t)
+	}
+}
+
+func TestMarshalingXml(transactions []*transaction.Transaction) {
+	data := transaction.Transactions{
+		Transactions: transactions,
+	}
+	encoded, err := xml.Marshal(data)
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+	encoded = append([]byte(xml.Header), encoded...)
+	log.Println(string(encoded))
+
+	var decoded transaction.Transactions
+	err = xml.Unmarshal(encoded, &decoded)
+	if err != nil {
+		log.Println(err)
+		os.Exit(2)
+	}
+	for _, t := range decoded.Transactions {
 		log.Printf("%#v", t)
 	}
 }

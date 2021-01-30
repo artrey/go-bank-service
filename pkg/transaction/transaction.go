@@ -17,13 +17,19 @@ var (
 )
 
 type Transaction struct {
-	Id        int64   `json:"id"`
-	From      string  `json:"from"`
-	To        string  `json:"to"`
-	Timestamp int64   `json:"timestamp"`
-	Amount    int64   `json:"amount"`
-	Total     int64   `json:"total"`
-	MCC       mcc.MCC `json:"mcc"`
+	XMLName   string  `json:"-" xml:"transaction"`
+	Id        int64   `json:"id" xml:"id"`
+	From      string  `json:"from" xml:"from"`
+	To        string  `json:"to" xml:"to"`
+	Timestamp int64   `json:"timestamp" xml:"timestamp"`
+	Amount    int64   `json:"amount" xml:"amount"`
+	Total     int64   `json:"total" xml:"total"`
+	MCC       mcc.MCC `json:"mcc" xml:"mcc"`
+}
+
+type Transactions struct {
+	XMLName      string         `xml:"transactions"`
+	Transactions []*Transaction `xml:"transaction"`
 }
 
 type Service struct {
