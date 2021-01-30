@@ -55,7 +55,7 @@ func execute() (err error) {
 			log.Println(err)
 			continue
 		}
-		handle(conn, transactionSvc)
+		go handle(conn, transactionSvc)
 	}
 }
 
