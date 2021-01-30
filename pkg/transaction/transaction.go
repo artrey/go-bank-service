@@ -17,13 +17,13 @@ var (
 )
 
 type Transaction struct {
-	Id        int64
-	From      string
-	To        string
-	Timestamp int64
-	Amount    int64
-	Total     int64
-	MCC       mcc.MCC
+	Id        int64   `json:"id"`
+	From      string  `json:"from"`
+	To        string  `json:"to"`
+	Timestamp int64   `json:"timestamp"`
+	Amount    int64   `json:"amount"`
+	Total     int64   `json:"total"`
+	MCC       mcc.MCC `json:"mcc"`
 }
 
 type Service struct {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/artrey/go-bank-service/pkg/transaction"
 	"log"
@@ -31,6 +32,7 @@ func main() {
 			From:      "4561 2612 1234 5467",
 			Timestamp: time.Date(2020, 9, 25, 16, 0, 0, 0, time.Local).UTC().Unix(),
 			Total:     500_00,
+			MCC:       "5411",
 		},
 		{
 			From:      "4561 2612 1234 5467",
@@ -59,6 +61,23 @@ func main() {
 
 	transaction.CategorizeConcurrentWithMutex(transactions, "4561 2612 1234 5467", 5)
 	transaction.CategorizeConcurrentWithChannels(transactions, "4561 2612 1234 5467", 5)
+
+	encoded, err := json.Marshal(transactions)
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+	log.Println(string(encoded))
+
+	var decoded []*transaction.Transaction
+	err = json.Unmarshal(encoded, &decoded)
+	if err != nil {
+		log.Println(err)
+		os.Exit(2)
+	}
+	for _, t := range decoded {
+		log.Printf("%#v", t)
+	}
 }
 
 func SumConcurrently(transactions []*transaction.Transaction, from, to int64) int64 {
