@@ -158,11 +158,15 @@ func writeIndex(writer *bufio.Writer) error {
 
 func writeOperationsCsv(writer *bufio.Writer, transactionSvc *transaction.Service) error {
 	records := transactionSvc.ExportRecords()
-	text := ""
-	for _, line := range records {
-		text += strings.Join(line, ";") + "\n"
+
+	var contentBuffer bytes.Buffer
+	w := csv.NewWriter(&contentBuffer)
+	w.Comma = ';'
+	err := w.WriteAll(records)
+	if err != nil {
+		return err
 	}
-	content := []byte(text)
+	content := contentBuffer.Bytes()
 
 	return writeResponse(writer, 200, []string{
 		"Content-Type: text/csv",
