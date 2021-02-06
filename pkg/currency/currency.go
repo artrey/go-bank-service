@@ -29,18 +29,16 @@ type Currency struct {
 	Value int64  `json:"value"`
 }
 
-func NewService(baseUrl string, timeout time.Duration, client *http.Client) *Service {
+func NewService(baseUrl string, client *http.Client) *Service {
 	return &Service{
 		baseUrl: baseUrl,
-		timeout: timeout,
 		client:  client,
 	}
 }
 
-func (s *Service) getResponseBody(method string) ([]byte, error) {
+func (s *Service) getResponseBody(ctx context.Context, method string) ([]byte, error) {
 	reqUrl := fmt.Sprintf("%s/%s", s.baseUrl, method)
 
-	ctx, _ := context.WithTimeout(context.Background(), s.timeout)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqUrl, nil)
 	if err != nil {
 		log.Println(err)
@@ -67,8 +65,8 @@ func (s *Service) getResponseBody(method string) ([]byte, error) {
 	return data, nil
 }
 
-func (s *Service) extractDTO() (*dto.RateListDTO, error) {
-	data, err := s.getResponseBody(currenciesMethod)
+func (s *Service) extractDTO(ctx context.Context) (*dto.RateListDTO, error) {
+	data, err := s.getResponseBody(ctx, currenciesMethod)
 
 	var rateList *dto.RateListDTO
 	err = xml.Unmarshal(data, &rateList)
@@ -80,8 +78,8 @@ func (s *Service) extractDTO() (*dto.RateListDTO, error) {
 	return rateList, nil
 }
 
-func (s *Service) Extract(writer io.Writer) (err error) {
-	rateListDTO, err := s.extractDTO()
+func (s *Service) Extract(ctx context.Context, writer io.Writer) (err error) {
+	rateListDTO, err := s.extractDTO(ctx)
 	if err != nil {
 		log.Println(err)
 		return err

@@ -20,10 +20,10 @@ type Service struct {
 	client  *http.Client
 }
 
-func NewService(baseUrl string) *Service {
+func NewService(baseUrl string, client *http.Client) *Service {
 	return &Service{
 		baseUrl: baseUrl,
-		client:  &http.Client{},
+		client:  client,
 	}
 }
 

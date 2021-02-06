@@ -7,6 +7,7 @@ import (
 	"github.com/artrey/go-bank-service/pkg/qr"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -45,7 +46,7 @@ func execute() error {
 	}
 
 	ctx, _ := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Millisecond)
-	svc := qr.NewService(baseUrl)
+	svc := qr.NewService(baseUrl, http.DefaultClient)
 	data, filetype, err := svc.Encode(ctx, text)
 	if err != nil {
 		log.Println(err)
@@ -54,7 +55,7 @@ func execute() error {
 
 	filename := fmt.Sprintf("%s.%s", text, filetype)
 	relativePath := filepath.Join(folderName, filename)
-	if err = ioutil.WriteFile(relativePath, data, os.ModeType); err != nil {
+	if err = ioutil.WriteFile(relativePath, data, os.ModePerm); err != nil {
 		log.Println(err)
 		return err
 	}

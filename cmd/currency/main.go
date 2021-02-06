@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/artrey/go-bank-service/pkg/currency"
 	"io"
 	"log"
@@ -19,8 +20,6 @@ func execute() error {
 	const baseUrl = "https://raw.githubusercontent.com"
 	const filename = "currencies.json"
 
-	svc := currency.NewService(baseUrl, time.Second*3, http.DefaultClient)
-
 	file, err := os.Create(filename)
 	if err != nil {
 		log.Println(err)
@@ -35,7 +34,9 @@ func execute() error {
 		}
 	}(file)
 
-	err = svc.Extract(file)
+	ctx, _ := context.WithTimeout(context.Background(), time.Second*3)
+	svc := currency.NewService(baseUrl, http.DefaultClient)
+	err = svc.Extract(ctx, file)
 	if err != nil {
 		log.Println(err)
 		return err
