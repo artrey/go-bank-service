@@ -24,9 +24,9 @@ type Service struct {
 }
 
 type Currency struct {
-	Code  string `json:"code"`
-	Name  string `json:"name"`
-	Value int64  `json:"value"`
+	Code  string
+	Name  string
+	Value int64
 }
 
 func NewService(baseUrl string, client *http.Client) *Service {
@@ -65,10 +65,10 @@ func (s *Service) getResponseBody(ctx context.Context, method string) ([]byte, e
 	return data, nil
 }
 
-func (s *Service) extractDTO(ctx context.Context) (*dto.RateListDTO, error) {
+func (s *Service) extractXmlDTO(ctx context.Context) (*dto.RateListXmlDTO, error) {
 	data, err := s.getResponseBody(ctx, currenciesMethod)
 
-	var rateList *dto.RateListDTO
+	var rateList *dto.RateListXmlDTO
 	err = xml.Unmarshal(data, &rateList)
 	if err != nil {
 		log.Println(err)
@@ -78,11 +78,11 @@ func (s *Service) extractDTO(ctx context.Context) (*dto.RateListDTO, error) {
 	return rateList, nil
 }
 
-func (s *Service) Extract(ctx context.Context, writer io.Writer) (err error) {
-	rateListDTO, err := s.extractDTO(ctx)
+func (s *Service) extractCurrenciesFromXml(ctx context.Context) ([]Currency, error) {
+	rateListDTO, err := s.extractXmlDTO(ctx)
 	if err != nil {
 		log.Println(err)
-		return err
+		return nil, err
 	}
 
 	currencies := make([]Currency, len(rateListDTO.Rates))
@@ -91,8 +91,34 @@ func (s *Service) Extract(ctx context.Context, writer io.Writer) (err error) {
 		currencies[i].Name = rateListDTO.Rates[i].Name
 		currencies[i].Value = rateListDTO.Rates[i].ValueInCents()
 	}
+	return currencies, nil
+}
 
-	data, err := json.Marshal(currencies)
+func (s *Service) marshalAsJson(currencies []Currency) ([]byte, error) {
+	currenciesJson := make([]dto.RateJsonDTO, len(currencies))
+	for i := 0; i < len(currencies); i++ {
+		currenciesJson[i].Code = currencies[i].Code
+		currenciesJson[i].Name = currencies[i].Name
+		currenciesJson[i].Value = currencies[i].Value
+	}
+
+	data, err := json.Marshal(currenciesJson)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func (s *Service) Extract(ctx context.Context, writer io.Writer) (err error) {
+	currencies, err := s.extractCurrenciesFromXml(ctx)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	data, err := s.marshalAsJson(currencies)
 	if err != nil {
 		log.Println(err)
 		return err

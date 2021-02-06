@@ -2,7 +2,7 @@ package dto
 
 import "math"
 
-type RateDTO struct {
+type RateXmlDTO struct {
 	XMLName  string `xml:"Valute"`
 	NumCode  string
 	CharCode string
@@ -11,11 +11,17 @@ type RateDTO struct {
 	Value    float64
 }
 
-type RateListDTO struct {
-	XMLName string    `xml:"ValCurs"`
-	Rates   []RateDTO `xml:"Valute"`
+type RateListXmlDTO struct {
+	XMLName string       `xml:"ValCurs"`
+	Rates   []RateXmlDTO `xml:"Valute"`
 }
 
-func (d RateDTO) ValueInCents() int64 {
-	return int64(math.Round(d.Value * 100)) / d.Nominal
+func (d RateXmlDTO) ValueInCents() int64 {
+	return int64(math.Round(d.Value*100)) / d.Nominal
+}
+
+type RateJsonDTO struct {
+	Code  string `json:"code"`
+	Name  string `json:"name"`
+	Value int64  `json:"value"`
 }
