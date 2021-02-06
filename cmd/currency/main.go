@@ -16,10 +16,10 @@ func main() {
 }
 
 func execute() error {
-	const url = "https://raw.githubusercontent.com/netology-code/bgo-homeworks/master/10_client/assets/daily.xml"
+	const baseUrl = "https://raw.githubusercontent.com"
 	const filename = "currencies.json"
 
-	svc := currency.NewService(url, time.Second*3, http.DefaultClient)
+	svc := currency.NewService(baseUrl, time.Second*3, http.DefaultClient)
 
 	file, err := os.Create(filename)
 	if err != nil {

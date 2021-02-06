@@ -4,12 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"github.com/artrey/go-bank-service/pkg/currency/dto"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
+)
+
+const (
+	currenciesMethod = "netology-code/bgo-homeworks/master/10_client/assets/daily.xml"
 )
 
 type Service struct {
@@ -32,8 +37,8 @@ func NewService(baseUrl string, timeout time.Duration, client *http.Client) *Ser
 	}
 }
 
-func (s *Service) getResponseBody() ([]byte, error) {
-	reqUrl := s.baseUrl
+func (s *Service) getResponseBody(method string) ([]byte, error) {
+	reqUrl := fmt.Sprintf("%s/%s", s.baseUrl, method)
 
 	ctx, _ := context.WithTimeout(context.Background(), s.timeout)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqUrl, nil)
@@ -63,7 +68,7 @@ func (s *Service) getResponseBody() ([]byte, error) {
 }
 
 func (s *Service) extractDTO() (*dto.RateListDTO, error) {
-	data, err := s.getResponseBody()
+	data, err := s.getResponseBody(currenciesMethod)
 
 	var rateList *dto.RateListDTO
 	err = xml.Unmarshal(data, &rateList)
