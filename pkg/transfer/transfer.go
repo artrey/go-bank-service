@@ -37,10 +37,6 @@ var (
 	InvalidCardNumber = errors.New("card number is invalid")
 )
 
-func checkOwning(cardNumber, issuerNumber string) bool {
-	return strings.HasPrefix(cardNumber, issuerNumber)
-}
-
 func IsValidCardNumber(number string) bool {
 	numberStr := strings.Split(strings.ReplaceAll(number, " ", ""), "")
 	if len(numberStr) == 0 {
@@ -95,13 +91,13 @@ func (s *Service) Card2Card(from, to string, amount int64) (int64, error) {
 		return 0, InvalidCardNumber
 	}
 
-	fromCard := s.CardSvc.FindCard(from)
-	if fromCard == nil && checkOwning(from, s.CardSvc.IssuerNumber) {
+	fromCard := s.CardSvc.FindCard(nil, from)
+	if fromCard == nil && s.CardSvc.CheckOwning(from) {
 		return 0, CardNotFound
 	}
 
-	toCard := s.CardSvc.FindCard(to)
-	if toCard == nil && checkOwning(to, s.CardSvc.IssuerNumber) {
+	toCard := s.CardSvc.FindCard(nil, to)
+	if toCard == nil && s.CardSvc.CheckOwning(to) {
 		return 0, CardNotFound
 	}
 

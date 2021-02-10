@@ -39,6 +39,38 @@ func TestService_IsValidCardNumber(t *testing.T) {
 	}
 }
 
+func makeEmptyCardService() *card.Service {
+	return card.NewService("Tinkoff", "5106 21")
+}
+
+func makeCardService1Card() *card.Service {
+	svc := makeEmptyCardService()
+	svc.Issue(nil, "Visa", 10, card.Plastic, 1000_00,
+		"RUB", "5106 2107 0000 0000", "https://...")
+	return svc
+}
+
+func makeCardService2Cards() *card.Service {
+	svc := makeCardService1Card()
+	svc.Issue(nil, "MasterCard", 10, card.Plastic, 1000_00,
+		"RUB", "5106 2105 0000 0002", "https://...")
+	return svc
+}
+
+func makeCommissions() transfer.Commissions {
+	return transfer.Commissions{
+		FromInner: func(val int64) int64 {
+			return int64(math.Max(float64(val*5/1000), 10_00))
+		},
+		ToInner: func(val int64) int64 {
+			return 0
+		},
+		FromOuterToOuter: func(val int64) int64 {
+			return int64(math.Max(float64(val*15/1000), 30_00))
+		},
+	}
+}
+
 func TestService_Card2Card(t *testing.T) {
 	type fields struct {
 		CardSvc        *card.Service
@@ -90,40 +122,9 @@ func TestService_Card2Card(t *testing.T) {
 		{
 			name: "Inner success",
 			fields: fields{
-				CardSvc: &card.Service{
-					BankName:     "Tinkoff",
-					IssuerNumber: "5106 21",
-					Cards: []*card.Card{
-						{
-							Id:       1,
-							Issuer:   "Visa",
-							Balance:  1000_00,
-							Currency: "RUB",
-							Number:   "5106 2107 0000 0000",
-							Icon:     "...",
-						},
-						{
-							Id:       2,
-							Issuer:   "MasterCard",
-							Balance:  1000_00,
-							Currency: "RUB",
-							Number:   "5106 2105 0000 0002",
-							Icon:     "...",
-						},
-					},
-				},
+				CardSvc:        makeCardService2Cards(),
 				TransactionSvc: transaction.NewService(),
-				commissions: transfer.Commissions{
-					FromInner: func(val int64) int64 {
-						return int64(math.Max(float64(val*5/1000), 10_00))
-					},
-					ToInner: func(val int64) int64 {
-						return 0
-					},
-					FromOuterToOuter: func(val int64) int64 {
-						return int64(math.Max(float64(val*15/1000), 30_00))
-					},
-				},
+				commissions:    makeCommissions(),
 			},
 			args: args{
 				from:   "5106 2107 0000 0000",
@@ -136,40 +137,9 @@ func TestService_Card2Card(t *testing.T) {
 		{
 			name: "Inner not enough",
 			fields: fields{
-				CardSvc: &card.Service{
-					BankName:     "Tinkoff",
-					IssuerNumber: "5106 21",
-					Cards: []*card.Card{
-						{
-							Id:       1,
-							Issuer:   "Visa",
-							Balance:  1000_00,
-							Currency: "RUB",
-							Number:   "5106 2107 0000 0000",
-							Icon:     "...",
-						},
-						{
-							Id:       2,
-							Issuer:   "MasterCard",
-							Balance:  1000_00,
-							Currency: "RUB",
-							Number:   "5106 2105 0000 0002",
-							Icon:     "...",
-						},
-					},
-				},
+				CardSvc:        makeCardService2Cards(),
 				TransactionSvc: transaction.NewService(),
-				commissions: transfer.Commissions{
-					FromInner: func(val int64) int64 {
-						return int64(math.Max(float64(val*5/1000), 10_00))
-					},
-					ToInner: func(val int64) int64 {
-						return 0
-					},
-					FromOuterToOuter: func(val int64) int64 {
-						return int64(math.Max(float64(val*15/1000), 30_00))
-					},
-				},
+				commissions:    makeCommissions(),
 			},
 			args: args{
 				from:   "5106 2107 0000 0000",
@@ -182,32 +152,9 @@ func TestService_Card2Card(t *testing.T) {
 		{
 			name: "Inner-outer success",
 			fields: fields{
-				CardSvc: &card.Service{
-					BankName:     "Tinkoff",
-					IssuerNumber: "5106 21",
-					Cards: []*card.Card{
-						{
-							Id:       1,
-							Issuer:   "Visa",
-							Balance:  1000_00,
-							Currency: "RUB",
-							Number:   "5106 2107 0000 0000",
-							Icon:     "...",
-						},
-					},
-				},
+				CardSvc:        makeCardService1Card(),
 				TransactionSvc: transaction.NewService(),
-				commissions: transfer.Commissions{
-					FromInner: func(val int64) int64 {
-						return int64(math.Max(float64(val*5/1000), 10_00))
-					},
-					ToInner: func(val int64) int64 {
-						return 0
-					},
-					FromOuterToOuter: func(val int64) int64 {
-						return int64(math.Max(float64(val*15/1000), 30_00))
-					},
-				},
+				commissions:    makeCommissions(),
 			},
 			args: args{
 				from:   "5106 2107 0000 0000",
@@ -220,32 +167,9 @@ func TestService_Card2Card(t *testing.T) {
 		{
 			name: "Inner-outer not enough",
 			fields: fields{
-				CardSvc: &card.Service{
-					BankName:     "Tinkoff",
-					IssuerNumber: "5106 21",
-					Cards: []*card.Card{
-						{
-							Id:       1,
-							Issuer:   "Visa",
-							Balance:  1000_00,
-							Currency: "RUB",
-							Number:   "5106 2107 0000 0000",
-							Icon:     "...",
-						},
-					},
-				},
+				CardSvc:        makeCardService1Card(),
 				TransactionSvc: transaction.NewService(),
-				commissions: transfer.Commissions{
-					FromInner: func(val int64) int64 {
-						return int64(math.Max(float64(val*5/1000), 10_00))
-					},
-					ToInner: func(val int64) int64 {
-						return 0
-					},
-					FromOuterToOuter: func(val int64) int64 {
-						return int64(math.Max(float64(val*15/1000), 30_00))
-					},
-				},
+				commissions:    makeCommissions(),
 			},
 			args: args{
 				from:   "5106 2107 0000 0000",
@@ -258,32 +182,9 @@ func TestService_Card2Card(t *testing.T) {
 		{
 			name: "Outer-inner success",
 			fields: fields{
-				CardSvc: &card.Service{
-					BankName:     "Tinkoff",
-					IssuerNumber: "5106 21",
-					Cards: []*card.Card{
-						{
-							Id:       1,
-							Issuer:   "Visa",
-							Balance:  1000_00,
-							Currency: "RUB",
-							Number:   "5106 2107 0000 0000",
-							Icon:     "...",
-						},
-					},
-				},
+				CardSvc:        makeCardService1Card(),
 				TransactionSvc: transaction.NewService(),
-				commissions: transfer.Commissions{
-					FromInner: func(val int64) int64 {
-						return int64(math.Max(float64(val*5/1000), 10_00))
-					},
-					ToInner: func(val int64) int64 {
-						return 0
-					},
-					FromOuterToOuter: func(val int64) int64 {
-						return int64(math.Max(float64(val*15/1000), 30_00))
-					},
-				},
+				commissions:    makeCommissions(),
 			},
 			args: args{
 				from:   "2107 0000 5106 0000",
@@ -296,23 +197,9 @@ func TestService_Card2Card(t *testing.T) {
 		{
 			name: "Outer success",
 			fields: fields{
-				CardSvc: &card.Service{
-					BankName:     "Tinkoff",
-					IssuerNumber: "5106 21",
-					Cards:        []*card.Card{},
-				},
+				CardSvc:        makeEmptyCardService(),
 				TransactionSvc: transaction.NewService(),
-				commissions: transfer.Commissions{
-					FromInner: func(val int64) int64 {
-						return int64(math.Max(float64(val*5/1000), 10_00))
-					},
-					ToInner: func(val int64) int64 {
-						return 0
-					},
-					FromOuterToOuter: func(val int64) int64 {
-						return int64(math.Max(float64(val*15/1000), 30_00))
-					},
-				},
+				commissions:    makeCommissions(),
 			},
 			args: args{
 				from:   "2107 0000 5106 0000",
@@ -325,23 +212,9 @@ func TestService_Card2Card(t *testing.T) {
 		{
 			name: "From card not found",
 			fields: fields{
-				CardSvc: &card.Service{
-					BankName:     "Tinkoff",
-					IssuerNumber: "5106 21",
-					Cards:        []*card.Card{},
-				},
+				CardSvc:        makeEmptyCardService(),
 				TransactionSvc: transaction.NewService(),
-				commissions: transfer.Commissions{
-					FromInner: func(val int64) int64 {
-						return int64(math.Max(float64(val*5/1000), 10_00))
-					},
-					ToInner: func(val int64) int64 {
-						return 0
-					},
-					FromOuterToOuter: func(val int64) int64 {
-						return int64(math.Max(float64(val*15/1000), 30_00))
-					},
-				},
+				commissions:    makeCommissions(),
 			},
 			args: args{
 				from:   "5106 2107 0000 0000",
@@ -354,23 +227,9 @@ func TestService_Card2Card(t *testing.T) {
 		{
 			name: "To card not found",
 			fields: fields{
-				CardSvc: &card.Service{
-					BankName:     "Tinkoff",
-					IssuerNumber: "5106 21",
-					Cards:        []*card.Card{},
-				},
+				CardSvc:        makeEmptyCardService(),
 				TransactionSvc: transaction.NewService(),
-				commissions: transfer.Commissions{
-					FromInner: func(val int64) int64 {
-						return int64(math.Max(float64(val*5/1000), 10_00))
-					},
-					ToInner: func(val int64) int64 {
-						return 0
-					},
-					FromOuterToOuter: func(val int64) int64 {
-						return int64(math.Max(float64(val*15/1000), 30_00))
-					},
-				},
+				commissions:    makeCommissions(),
 			},
 			args: args{
 				from:   "5106 2107 0000 0000",

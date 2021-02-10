@@ -11,7 +11,7 @@ import (
 func main() {
 	transactionSvc := transaction.NewService()
 	cardSvc := card.NewService("Tinkoff", "5106 21")
-	cardSvc.Issue("visa", 2000_00, "RUB", "5106 2109 ...", "...")
+	cardSvc.Issue(nil, "visa", 1, card.Plastic, 2000_00, "RUB", "5106 2109 ...", "...")
 	transferSvc := transfer.NewService(cardSvc, transactionSvc, transfer.Commissions{
 		FromInner: func(val int64) int64 {
 			return int64(math.Max(float64(val*5/1000), 10_00))
