@@ -1,0 +1,14 @@
+###
+
+GET http://localhost:9999/getCards
+
+###
+
+POST http://localhost:9999/addCard
+Content-Type: application/json
+
+{
+  "type": "virtual",
+  "issuer": "Visa",
+  "cardHolderId": 1
+}
