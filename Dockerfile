@@ -1,7 +1,7 @@
 FROM alpine:3
 
-COPY bank /app/
+COPY bank-service-api /app/
 
-CMD ["/app/bank"]
+CMD ["/app/bank-service-api"]
 
 EXPOSE 9999
