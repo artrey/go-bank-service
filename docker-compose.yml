@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  db:
+    image: library/postgres:alpine
+    env_file:
+      - .env
+    ports:
+      - 5532:5432
+    volumes:
+      - ./docker-entrypoint-initdb.d/:/docker-entrypoint-initdb.d/:ro
