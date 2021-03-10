@@ -44,3 +44,15 @@ type Transaction struct {
 	Description *string
 	CreatedAt   int64
 }
+
+type MostPopularSpending struct {
+	Description string
+	Count       int64
+	IconUri     string
+}
+
+type MostExpensiveSpending struct {
+	Description string
+	Sum         int64
+	IconUri     string
+}

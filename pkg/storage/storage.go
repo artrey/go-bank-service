@@ -8,4 +8,6 @@ type Interface interface {
 	GetTransactionsByCardId(int64) ([]models.Transaction, error)
 	GetIconById(int64) (models.Icon, error)
 	GetMccById(string) (models.Mcc, error)
+	GetMostPopularSpendingByCard(int64) (models.MostPopularSpending, error)
+	GetMostExpensiveSpendingByCard(int64) (models.MostExpensiveSpending, error)
 }

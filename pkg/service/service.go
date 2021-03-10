@@ -24,6 +24,8 @@ func NewServer(storage storage.Interface, mux *http.ServeMux) *Server {
 func (s *Server) Init() {
 	s.mux.HandleFunc("/cards", s.getCards)
 	s.mux.HandleFunc("/transactions", s.getTransactions)
+	s.mux.HandleFunc("/most-expensive", s.getMostExpensiveSpending)
+	s.mux.HandleFunc("/most-popular", s.getMostPopularSpending)
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -43,8 +45,8 @@ func (s *Server) getCards(w http.ResponseWriter, r *http.Request) {
 	}
 
 	decoder := json.NewDecoder(r.Body)
-	var requestCards dto.RequestCards
-	err := decoder.Decode(&requestCards)
+	var requestData dto.InClientId
+	err := decoder.Decode(&requestData)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(400)
@@ -52,7 +54,7 @@ func (s *Server) getCards(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cards, err := s.storage.GetCardsByClientId(requestCards.ClientId)
+	cards, err := s.storage.GetCardsByClientId(requestData.ClientId)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(500)
@@ -85,8 +87,8 @@ func (s *Server) getTransactions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	decoder := json.NewDecoder(r.Body)
-	var requestTransactions dto.RequestTransactions
-	err := decoder.Decode(&requestTransactions)
+	var requestData dto.InCardId
+	err := decoder.Decode(&requestData)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(400)
@@ -94,7 +96,7 @@ func (s *Server) getTransactions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	transactions, err := s.storage.GetTransactionsByCardId(requestTransactions.CardId)
+	transactions, err := s.storage.GetTransactionsByCardId(requestData.CardId)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(500)
@@ -140,6 +142,84 @@ func (s *Server) getTransactions(w http.ResponseWriter, r *http.Request) {
 		dtos[i] = b.Build()
 	}
 	err = encoder.Encode(dtos)
+
+	if err != nil {
+		w.WriteHeader(500)
+		_ = encoder.Encode(dto.MakeUnknownError(err))
+	}
+}
+
+func (s *Server) getMostExpensiveSpending(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+	encoder := json.NewEncoder(w)
+
+	if r.Method != "GET" {
+		err := errors.New("not allowed, use GET")
+		log.Println(err)
+		w.WriteHeader(405)
+		_ = encoder.Encode(dto.MakeError("not-allowed", err))
+		return
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	var requestData dto.InCardId
+	err := decoder.Decode(&requestData)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(400)
+		_ = encoder.Encode(dto.MakeError("invalid-data", err))
+		return
+	}
+
+	spent, err := s.storage.GetMostExpensiveSpendingByCard(requestData.CardId)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(500)
+		_ = encoder.Encode(dto.MakeUnknownError(err))
+		return
+	}
+
+	data := dto.FromModelMostExpensiveSpending(spent)
+	err = encoder.Encode(data)
+
+	if err != nil {
+		w.WriteHeader(500)
+		_ = encoder.Encode(dto.MakeUnknownError(err))
+	}
+}
+
+func (s *Server) getMostPopularSpending(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+	encoder := json.NewEncoder(w)
+
+	if r.Method != "GET" {
+		err := errors.New("not allowed, use GET")
+		log.Println(err)
+		w.WriteHeader(405)
+		_ = encoder.Encode(dto.MakeError("not-allowed", err))
+		return
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	var requestData dto.InCardId
+	err := decoder.Decode(&requestData)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(400)
+		_ = encoder.Encode(dto.MakeError("invalid-data", err))
+		return
+	}
+
+	spent, err := s.storage.GetMostPopularSpendingByCard(requestData.CardId)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(500)
+		_ = encoder.Encode(dto.MakeUnknownError(err))
+		return
+	}
+
+	data := dto.FromModelMostPopularSpending(spent)
+	err = encoder.Encode(data)
 
 	if err != nil {
 		w.WriteHeader(500)

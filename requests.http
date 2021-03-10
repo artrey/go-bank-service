@@ -15,3 +15,21 @@ Content-Type: application/json
 {
   "cardId": 1
 }
+
+###
+
+GET http://localhost:9999/most-expensive
+Content-Type: application/json
+
+{
+  "cardId": 1
+}
+
+###
+
+GET http://localhost:9999/most-popular
+Content-Type: application/json
+
+{
+  "cardId": 1
+}

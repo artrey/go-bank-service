@@ -4,10 +4,6 @@ import (
 	"github.com/artrey/go-bank-service/pkg/models"
 )
 
-type RequestCards struct {
-	ClientId int64 `json:"clientId"`
-}
-
 type Card struct {
 	Id        int64  `json:"id"`
 	Number    string `json:"number"`
