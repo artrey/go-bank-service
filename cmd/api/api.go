@@ -1,11 +1,10 @@
 package main
 
 import (
-	"github.com/artrey/go-bank-service/pkg/app"
-	"github.com/artrey/go-bank-service/pkg/card"
+	"context"
+	"github.com/artrey/go-bank-service/pkg/storage/postgres"
 	"log"
 	"net"
-	"net/http"
 	"os"
 )
 
@@ -34,14 +33,40 @@ func main() {
 }
 
 func execute(address string) error {
-	cardSvc := card.NewService("MyBank", "5106 21")
-	mux := http.NewServeMux()
-	application := app.NewServer(cardSvc, mux)
-	application.Init()
+	//cardSvc := card.NewService("MyBank", "5106 21")
+	//mux := http.NewServeMux()
+	//application := app.NewServer(cardSvc, mux)
+	//application.Init()
+	//
+	//server := http.Server{
+	//	Addr:    address,
+	//	Handler: application,
+	//}
+	//return server.ListenAndServe()
 
-	server := http.Server{
-		Addr:    address,
-		Handler: application,
+	storage, err := postgres.New(context.Background(), "postgres://go:go@172.30.235.58:5532/go")
+	if err != nil {
+		log.Println(err)
+		return err
 	}
-	return server.ListenAndServe()
+
+	cards, err := storage.GetCardsByClientId(2)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	for _, c := range cards {
+		log.Printf("%+v", c)
+		transactions, err := storage.GetTransactionsByCardId(c.Id)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		for _, t := range transactions {
+			log.Printf("%+v", t)
+		}
+	}
+
+	return nil
 }

@@ -5,31 +5,28 @@ import (
 	"errors"
 	"github.com/artrey/go-bank-service/pkg/app/dto"
 	"github.com/artrey/go-bank-service/pkg/card"
+	"github.com/artrey/go-bank-service/pkg/transaction"
 	"log"
 	"net/http"
 )
 
 type Server struct {
-	cardSvc *card.Service
-	mux     *http.ServeMux
+	cardSvc        *card.Service
+	transactionSvc *transaction.Service
+	mux            *http.ServeMux
 }
 
-func NewServer(cardSvc *card.Service, mux *http.ServeMux) *Server {
+func NewServer(cardSvc *card.Service, transactionSvc *transaction.Service, mux *http.ServeMux) *Server {
 	return &Server{
 		cardSvc: cardSvc,
+		transactionSvc: transactionSvc,
 		mux:     mux,
 	}
 }
 
 func (s *Server) Init() {
-	s.mux.HandleFunc("/getCards", s.getCards)
-	s.mux.HandleFunc("/addCard", s.addCard)
-	s.mux.HandleFunc("/editCard", s.editCard)
-	s.mux.HandleFunc("/removeCard", s.removeCard)
-
-	// TODO: remove it
-	s.cardSvc.Issue(nil, "Visa", 1,
-		card.Plastic, 1000_00, "RUB", s.cardSvc.GenerateNumber(), "https://...")
+	s.mux.HandleFunc("/cards", s.getCards)
+	s.mux.HandleFunc("/transactions", s.getTransactions)
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -40,6 +37,27 @@ func (s *Server) getCards(w http.ResponseWriter, r *http.Request) {
 	cards := s.cardSvc.All(r.Context(), 1)
 	dtos := make([]*dto.Card, len(cards))
 	for i, c := range cards {
+		dtos[i] = dto.FromServiceCard(c)
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+
+	encoder := json.NewEncoder(w)
+	err := encoder.Encode(dtos)
+
+	if err != nil {
+		_ = encoder.Encode(dto.Error{
+			Code:    "unknown",
+			Message: err.Error(),
+		})
+		w.WriteHeader(500)
+	}
+}
+
+func (s *Server) getTransactions(w http.ResponseWriter, r *http.Request) {
+	transactions := s.transactionSvc.All(r.Context(), 1)
+	dtos := make([]*dto.Card, len(transactions))
+	for i, c := range transactions {
 		dtos[i] = dto.FromServiceCard(c)
 	}
 
