@@ -7,7 +7,7 @@ import (
 )
 
 type Storage struct {
-	db *pgxpool.Pool
+	db  *pgxpool.Pool
 	ctx context.Context
 }
 
@@ -22,11 +22,16 @@ func New(ctx context.Context, dsn string) (*Storage, error) {
 	return s, nil
 }
 
+func (s *Storage) Close() {
+	s.db.Close()
+}
+
 func (s *Storage) GetCardsByClientId(id int64) ([]models.Card, error) {
 	sql := `
 SELECT id, number, balance, issuer, holder, owner_id, status, EXTRACT(EPOCH FROM created_at)::bigint
 FROM cards
 WHERE owner_id = $1
+LIMIT 50
 `
 	rows, err := s.db.Query(s.ctx, sql, id)
 	if err != nil {
@@ -51,11 +56,27 @@ WHERE owner_id = $1
 	return cards, nil
 }
 
+func (s *Storage) GetCardById(id int64) (models.Card, error) {
+	sql := `
+SELECT id, number, balance, issuer, holder, owner_id, status, EXTRACT(EPOCH FROM created_at)::bigint
+FROM cards
+WHERE id = $1
+`
+	var c models.Card
+	err := s.db.QueryRow(s.ctx, sql, id).Scan(
+		&c.Id, &c.Number, &c.Balance, &c.Issuer, &c.Holder, &c.OwnerId, &c.Status, &c.CreatedAt)
+	if err != nil {
+		return models.Card{}, err
+	}
+	return c, nil
+}
+
 func (s *Storage) GetTransactionsByCardId(id int64) ([]models.Transaction, error) {
 	sql := `
 SELECT id, from_id, to_id, sum, mcc_id, icon_id, description, EXTRACT(EPOCH FROM created_at)::bigint
 FROM transactions
 WHERE from_id = $1 or to_id = $1
+LIMIT 50
 `
 	rows, err := s.db.Query(s.ctx, sql, id)
 	if err != nil {
@@ -78,4 +99,32 @@ WHERE from_id = $1 or to_id = $1
 	}
 
 	return transactions, nil
+}
+
+func (s *Storage) GetIconById(id int64) (models.Icon, error) {
+	sql := `
+SELECT id, title, uri
+FROM icons
+WHERE id = $1
+`
+	var icon models.Icon
+	err := s.db.QueryRow(s.ctx, sql, id).Scan(&icon.Id, &icon.Title, &icon.Uri)
+	if err != nil {
+		return models.Icon{}, err
+	}
+	return icon, nil
+}
+
+func (s *Storage) GetMccById(id string) (models.Mcc, error) {
+	sql := `
+SELECT id, text
+FROM mccs
+WHERE id = $1
+`
+	var mcc models.Mcc
+	err := s.db.QueryRow(s.ctx, sql, id).Scan(&mcc.Id, &mcc.Text)
+	if err != nil {
+		return models.Mcc{}, err
+	}
+	return mcc, nil
 }

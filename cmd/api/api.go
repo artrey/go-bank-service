@@ -2,15 +2,18 @@ package main
 
 import (
 	"context"
+	"github.com/artrey/go-bank-service/pkg/service"
 	"github.com/artrey/go-bank-service/pkg/storage/postgres"
 	"log"
 	"net"
+	"net/http"
 	"os"
 )
 
 const (
 	defaultHost = "0.0.0.0"
 	defaultPort = "9999"
+	defaultDsn  = "postgres://user:pass@localhost:5432/api"
 )
 
 func main() {
@@ -22,51 +25,36 @@ func main() {
 	if !ok {
 		port = defaultPort
 	}
+	dsn, ok := os.LookupEnv("STORAGE_DSN")
+	if !ok {
+		dsn = defaultDsn
+	}
+	log.Println(dsn)
 
 	address := net.JoinHostPort(host, port)
 	log.Println(address)
 
-	if err := execute(address); err != nil {
+	if err := execute(address, dsn); err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
 }
 
-func execute(address string) error {
-	//cardSvc := card.NewService("MyBank", "5106 21")
-	//mux := http.NewServeMux()
-	//application := app.NewServer(cardSvc, mux)
-	//application.Init()
-	//
-	//server := http.Server{
-	//	Addr:    address,
-	//	Handler: application,
-	//}
-	//return server.ListenAndServe()
-
-	storage, err := postgres.New(context.Background(), "postgres://go:go@172.30.235.58:5532/go")
+func execute(address, dsn string) error {
+	storage, err := postgres.New(context.Background(), dsn)
 	if err != nil {
 		log.Println(err)
 		return err
 	}
+	defer storage.Close()
 
-	cards, err := storage.GetCardsByClientId(2)
-	if err != nil {
-		log.Println(err)
-		return err
+	mux := http.NewServeMux()
+	application := service.NewServer(storage, mux)
+	application.Init()
+
+	server := http.Server{
+		Addr:    address,
+		Handler: application,
 	}
-
-	for _, c := range cards {
-		log.Printf("%+v", c)
-		transactions, err := storage.GetTransactionsByCardId(c.Id)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		for _, t := range transactions {
-			log.Printf("%+v", t)
-		}
-	}
-
-	return nil
+	return server.ListenAndServe()
 }
