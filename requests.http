@@ -1,14 +1,35 @@
 ###
 
-GET http://localhost:9999/getCards
-
-###
-
-POST http://localhost:9999/addCard
+GET http://localhost:9999/cards
 Content-Type: application/json
 
 {
-  "type": "virtual",
-  "issuer": "Visa",
-  "cardHolderId": 1
+  "clientId": 1
+}
+
+###
+
+GET http://localhost:9999/transactions
+Content-Type: application/json
+
+{
+  "cardId": 1
+}
+
+###
+
+GET http://localhost:9999/most-expensive
+Content-Type: application/json
+
+{
+  "cardId": 1
+}
+
+###
+
+GET http://localhost:9999/most-popular
+Content-Type: application/json
+
+{
+  "cardId": 1
 }

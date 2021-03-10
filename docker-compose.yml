@@ -9,3 +9,15 @@ services:
       - 5532:5432
     volumes:
       - ./docker-entrypoint-initdb.d/:/docker-entrypoint-initdb.d/:ro
+
+  api:
+    build: .
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - 9999:9999
+    depends_on:
+      - db
+    volumes:
+      - ./docker-entrypoint-initdb.d/:/docker-entrypoint-initdb.d/:ro
