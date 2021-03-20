@@ -25,7 +25,7 @@ func main() {
 	if !ok {
 		port = defaultPort
 	}
-	dsn, ok := os.LookupEnv("STORAGE_DSN")
+	dsn, ok := os.LookupEnv("DATABASE_URL")
 	if !ok {
 		dsn = defaultDsn
 	}
